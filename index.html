@@ -2,73 +2,51 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Buddy Kontrol Paneli</title>
- <style>
-        body { 
-            background-color: #0f172a; color: #0ea5e9; 
-            font-family: sans-serif; text-align: center; 
-            margin: 0; padding: 20px; /* Kenar boşluğu ekledik */
-        }
-        .dashboard { 
-            background: #1e293b; padding: 20px; border-radius: 15px; 
-            display: inline-block; width: 90%; max-width: 400px; /* Mobil uyum */
-            box-shadow: 0 0 20px rgba(14, 165, 233, 0.2); margin-bottom: 20px;
-        }
-        .data-row { font-size: 18px; margin: 10px 0; color: #f8fafc; }
-        .data-row span { color: #0ea5e9; font-weight: bold; font-size: 24px;}
-        
-        .controls { 
-            display: flex; flex-direction: column; /* Butonları alt alta diz */
-            align-items: center; 
-        }
-        button { 
-            background: #0ea5e9; color: #fff; border: none; 
-            padding: 20px; /* Parmakla basmak için büyüttük */
-            width: 90%; max-width: 300px; margin: 8px; 
-            cursor: pointer; border-radius: 12px; 
-            font-weight: bold; font-size: 18px; 
-        }
-        button:hover { background: #38bdf8; }
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Siber-Buddy Kontrol Paneli</title>
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <style>
+        body { background-color: #0f172a; color: #0ea5e9; font-family: sans-serif; text-align: center; margin: 0; padding: 20px; }
+        .dashboard { background: #1e293b; padding: 20px; border-radius: 15px; display: inline-block; width: 90%; max-width: 400px; box-shadow: 0 0 20px rgba(14, 165, 233, 0.2); margin-bottom: 20px; }
+        .data-row { font-size: 20px; margin: 10px 0; color: #f8fafc; }
+        .data-row span { color: #0ea5e9; font-weight: bold; font-size: 28px;}
+        button { background: #0ea5e9; color: #fff; border: none; padding: 15px; width: 90%; max-width: 300px; margin: 8px; cursor: pointer; border-radius: 12px; font-weight: bold; font-size: 16px; }
         .btn-grinch { background: #ef4444; }
     </style>
 </head>
 <body>
 
-    <h1>🚀 BUDDY KONTROL MERKEZİ</h1>
+    <h1>🚀 BUDDY KONTROL</h1>
+    <div id="status">Bağlanılıyor...</div>
     
     <div class="dashboard">
-        <div class="data-row">İç Sıcaklık: <span id="inTemp">--</span> °C</div>
-        <div class="data-row">İç Nem: <span id="inHum">--</span> %</div>
-        <div class="data-row">Dış Sıcaklık: <span id="outTemp">--</span> °C</div>
+        <div class="data-row">İç: <span id="inTemp">--</span>°C | <span id="inHum">--</span>%</div>
+        <div class="data-row">Dış: <span id="outTemp">--</span>°C</div>
     </div>
 
     <div class="controls">
-        <button onclick="sendCommand('smile')">Gülümset (Smile)</button>
-        <button onclick="sendCommand('surprise')">Şaşırt (Surprise)</button>
-        <button onclick="sendCommand('normal')">Normale Dön</button>
+        <button onclick="sendCommand('smile')">Gülümset</button>
+        <button onclick="sendCommand('surprise')">Şaşırt</button>
         <button class="btn-grinch" onclick="sendCommand('grinch')">Grinch Modu!</button>
     </div>
 
     <script>
-        // 1. Her 2 saniyede bir Node.js API'den verileri çek (Sensör döngümüzle aynı hızda)
-        setInterval(() => {
-            fetch('/api/data')
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('inTemp').innerText = data.inTemp || '--';
-                    document.getElementById('inHum').innerText = data.inHum || '--';
-                    document.getElementById('outTemp').innerText = data.outTemp || '--';
-                })
-                .catch(err => console.error("Veri çekme hatası:", err));
-        }, 2000);
+        const client = mqtt.connect('ws://broker.hivemq.com:8000/mqtt');
 
-        // 2. Butonlara basıldığında Node.js API'ye komut gönder (O da MQTT'ye iletecek)
+        client.on('connect', () => {
+            document.getElementById('status').innerText = "🟢 Bağlı";
+            client.subscribe('ostimbul/buddy/data');
+        });
+
+        client.on('message', (topic, message) => {
+            const data = JSON.parse(message.toString());
+            document.getElementById('inTemp').innerText = data.inTemp || '--';
+            document.getElementById('inHum').innerText = data.inHum || '--';
+            document.getElementById('outTemp').innerText = data.outTemp || '--';
+        });
+
         function sendCommand(cmd) {
-            fetch('/api/command', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ command: cmd })
-            }).then(() => console.log("Komut yollandı:", cmd));
+            client.publish('ostimbul/buddy/command', cmd);
         }
     </script>
 </body>
