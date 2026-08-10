@@ -1,4 +1,4 @@
-export const dynamic = 'force-dynamic'; // Next.js'in veriyi dondurmasını (cache) kesin olarak engeller!
+export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 
 let latestData = {
@@ -9,17 +9,20 @@ let latestData = {
   accepted: 0,
   rejected: 0,
   balance: 0,
-  lastUpdate: "Veri yok"
+  lastUpdate: "Veri yok",
+  lastSeenTimestamp: null // Son paket geliş zamanı
 };
 
 export async function POST(request) {
   try {
     const body = await request.json();
+    const now = new Date();
     
     latestData = {
       ...latestData,
       ...body,
-      lastUpdate: new Date().toLocaleTimeString('tr-TR', { timeZone: 'Europe/Istanbul' })
+      lastSeenTimestamp: now.getTime(), // Milisaniye cinsinden kaydediyoruz
+      lastUpdate: now.toLocaleTimeString('tr-TR', { timeZone: 'Europe/Istanbul' })
     };
 
     if (body.username) {

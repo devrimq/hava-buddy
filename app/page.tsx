@@ -11,7 +11,7 @@ export default function Home() {
     rejected: 0,
     balance: 0,
     lastUpdate: "-",
-    timestamp: null
+    lastSeenTimestamp: null
   });
 
   const [isOnline, setIsOnline] = useState(false);
@@ -21,17 +21,15 @@ export default function Home() {
       try {
         const res = await fetch('/api/update', { cache: 'no-store' });
         const json = await res.json();
-        
-        // Gelen veride timestamp yoksa veya uyuşmuyorsa şu anki zamanı baz alalım
-        const updateTime = json.timestamp ? new Date(json.timestamp) : new Date();
-        
-        setData({
-          ...json,
-          timestamp: updateTime
-        });
+        setData(json);
 
-        // Veri başarıyla çekildiyse online yap
-        setIsOnline(true);
+        // Kontrol: Cihazdan son 30 saniye içinde veri geldi mi?
+        if (json.lastSeenTimestamp) {
+          const diffInSeconds = (Date.now() - json.lastSeenTimestamp) / 1000;
+          setIsOnline(diffInSeconds <= 30);
+        } else {
+          setIsOnline(false);
+        }
       } catch (err) {
         console.error("Veri çekilemedi:", err);
         setIsOnline(false);
@@ -42,20 +40,6 @@ export default function Home() {
     const interval = setInterval(fetchData, 5000);
     return () => clearInterval(interval);
   }, []);
-
-  // Zaman aşımı (Timeout) kontrolü: Son veri geleli 30 saniyeden fazla olduysa offline yap
-  useEffect(() => {
-    const timer = setInterval(() => {
-      if (data.timestamp) {
-        const diffInSeconds = (new Date() - new Date(data.timestamp)) / 1000;
-        if (diffInSeconds > 30) { 
-          setIsOnline(false);
-        }
-      }
-    }, 5000);
-
-    return () => clearInterval(timer);
-  }, [data.timestamp]);
 
   const hashrateVal = Number(data.hashrate) || 0;
   const balanceVal = Number(data.balance) || 0;
@@ -91,7 +75,7 @@ export default function Home() {
 
       <p style={{ color: '#94a3b8', marginBottom: '40px' }}>Son Güncelleme: {data.lastUpdate}</p>
 
-      {/* Veri Kartları - Offline olduğunda hafif soluklaşır */}
+      {/* Veri Kartları */}
       <div style={{ 
         display: 'flex', 
         justifyContent: 'center', 
@@ -99,7 +83,7 @@ export default function Home() {
         flexWrap: 'wrap', 
         maxWidth: '1000px', 
         margin: '0 auto',
-        opacity: isOnline ? 1 : 0.5,
+        opacity: isOnline ? 1 : 0.4,
         transition: 'opacity 0.3s ease'
       }}>
         <div style={{ background: '#1e293b', padding: '20px 30px', borderRadius: '12px', minWidth: '200px', boxShadow: '0 4px 6px rgba(0,0,0,0.3)' }}>
