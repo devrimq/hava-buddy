@@ -1,69 +1,63 @@
-import Image from "next/image";
+'use client'; 
+import { useState, useEffect } from 'react';
 
 export default function Home() {
+  const [data, setData] = useState({
+    device: "Bağlantı bekleniyor...",
+    temperature: 0,
+    humidity: 0,
+    hashrate: 0,
+    accepted: 0,
+    rejected: 0,
+    lastUpdate: "-"
+  });
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const res = await fetch('/api/update');
+        const json = await res.json();
+        setData(json);
+      } catch (err) {
+        console.error("Veri çekilemedi:", err);
+      }
+    }
+
+    fetchData();
+    const interval = setInterval(fetchData, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main style={{ fontFamily: 'Arial, sans-serif', background: '#0f172a', color: '#f8fafc', minHeight: '100vh', textAlign: 'center', padding: '50px 20px' }}>
+      <h1 style={{ color: '#38bdf8', marginBottom: '10px' }}>Ofis & Duino-Coin Canlı Takip</h1>
+      <p style={{ color: '#94a3b8', marginBottom: '40px' }}>Son Güncelleme: {data.lastUpdate}</p>
+
+      <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap' }}>
+        <div style={{ background: '#1e293b', padding: '20px 30px', borderRadius: '12px', minWidth: '200px', boxShadow: '0 4px 6px rgba(0,0,0,0.3)' }}>
+          <h3 style={{ margin: '0 0 10px 0', color: '#cbd5e1' }}>Sıcaklık</h3>
+          <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#fb923c' }}>{data.temperature} &deg;C</div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        <div style={{ background: '#1e293b', padding: '20px 30px', borderRadius: '12px', minWidth: '200px', boxShadow: '0 4px 6px rgba(0,0,0,0.3)' }}>
+          <h3 style={{ margin: '0 0 10px 0', color: '#cbd5e1' }}>Nem</h3>
+          <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#38bdf8' }}>{data.humidity} %</div>
         </div>
-      </main>
-    </div>
+
+        <div style={{ background: '#1e293b', padding: '20px 30px', borderRadius: '12px', minWidth: '200px', boxShadow: '0 4px 6px rgba(0,0,0,0.3)' }}>
+          <h3 style={{ margin: '0 0 10px 0', color: '#cbd5e1' }}>Hashrate</h3>
+          <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#4ade80' }}>{(typeof data.hashrate === 'number' ? data.hashrate : 0).toFixed(2)} kH/s</div>
+        </div>
+
+        <div style={{ background: '#1e293b', padding: '20px 30px', borderRadius: '12px', minWidth: '200px', boxShadow: '0 4px 6px rgba(0,0,0,0.3)' }}>
+          <h3 style={{ margin: '0 0 10px 0', color: '#cbd5e1' }}>Kabul / Red</h3>
+          <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#c084fc' }}>{data.accepted} / {data.rejected}</div>
+        </div>
+      </div>
+      
+      <div style={{ marginTop: '30px', color: '#64748b' }}>
+        Cihaz: {data.device}
+      </div>
+    </main>
   );
 }
