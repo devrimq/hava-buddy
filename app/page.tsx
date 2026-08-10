@@ -9,13 +9,14 @@ export default function Home() {
     hashrate: 0,
     accepted: 0,
     rejected: 0,
-    balance: 0,
     lastUpdate: "-",
     lastSeenTimestamp: null
   });
 
+  const [ducoBalance, setDucoBalance] = useState(0);
   const [isOnline, setIsOnline] = useState(false);
 
+  // 1. ESP32 Verilerini Vercel API'den Çekme
   useEffect(() => {
     async function fetchData() {
       try {
@@ -23,10 +24,10 @@ export default function Home() {
         const json = await res.json();
         setData(json);
 
-        // Kontrol: Cihazdan son 30 saniye içinde veri geldi mi?
+        // Tolerans 45 saniyeye çıkarıldı (C3 döngü gecikmelerini tolore etmek için)
         if (json.lastSeenTimestamp) {
           const diffInSeconds = (Date.now() - json.lastSeenTimestamp) / 1000;
-          setIsOnline(diffInSeconds <= 30);
+          setIsOnline(diffInSeconds <= 45);
         } else {
           setIsOnline(false);
         }
@@ -41,8 +42,34 @@ export default function Home() {
     return () => clearInterval(interval);
   }, []);
 
+  // 2. DUCO Bakiyesini Doğrudan Duino-Coin API'sinden Canlı Çekme
+  useEffect(() => {
+    async function fetchBalance() {
+      try {
+        const res = await fetch('https://server.duinocoin.com/balances/devrimq', { cache: 'no-store' });
+        const json = await res.json();
+        
+        let currentBalance = null;
+        if (json?.result?.balance !== undefined) {
+          currentBalance = json.result.balance;
+        } else if (Array.isArray(json?.result) && json.result[0]?.balance !== undefined) {
+          currentBalance = json.result[0].balance;
+        }
+
+        if (currentBalance !== null) {
+          setDucoBalance(currentBalance);
+        }
+      } catch (err) {
+        console.error("Duino-Coin bakiye canlı çekilemedi:", err);
+      }
+    }
+
+    fetchBalance();
+    const balanceInterval = setInterval(fetchBalance, 15000); // 15 saniyede bir bakiyeyi güncelle
+    return () => clearInterval(balanceInterval);
+  }, []);
+
   const hashrateVal = Number(data.hashrate) || 0;
-  const balanceVal = Number(data.balance) || 0;
 
   return (
     <main style={{ fontFamily: 'Arial, sans-serif', background: '#0f172a', color: '#f8fafc', minHeight: '100vh', textAlign: 'center', padding: '50px 20px' }}>
@@ -82,9 +109,7 @@ export default function Home() {
         gap: '20px', 
         flexWrap: 'wrap', 
         maxWidth: '1000px', 
-        margin: '0 auto',
-        opacity: isOnline ? 1 : 0.4,
-        transition: 'opacity 0.3s ease'
+        margin: '0 auto'
       }}>
         <div style={{ background: '#1e293b', padding: '20px 30px', borderRadius: '12px', minWidth: '200px', boxShadow: '0 4px 6px rgba(0,0,0,0.3)' }}>
           <h3 style={{ margin: '0 0 10px 0', color: '#cbd5e1' }}>Sıcaklık</h3>
@@ -108,7 +133,7 @@ export default function Home() {
 
         <div style={{ background: '#1e293b', padding: '20px 30px', borderRadius: '12px', minWidth: '200px', boxShadow: '0 4px 6px rgba(0,0,0,0.3)' }}>
           <h3 style={{ margin: '0 0 10px 0', color: '#cbd5e1' }}>DUCO Bakiye</h3>
-          <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#facc15' }}>{balanceVal.toFixed(4)} DUCO</div>
+          <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#facc15' }}>{Number(ducoBalance).toFixed(4)} DUCO</div>
         </div>
       </div>
       
