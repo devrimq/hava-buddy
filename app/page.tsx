@@ -9,6 +9,7 @@ export default function Home() {
     hashrate: 0,
     accepted: 0,
     rejected: 0,
+    balance: 0,
     lastUpdate: "-"
   });
 
@@ -28,12 +29,15 @@ export default function Home() {
     return () => clearInterval(interval);
   }, []);
 
+  const hashrateVal = Number(data.hashrate) || 0;
+  const balanceVal = Number(data.balance) || 0;
+
   return (
     <main style={{ fontFamily: 'Arial, sans-serif', background: '#0f172a', color: '#f8fafc', minHeight: '100vh', textAlign: 'center', padding: '50px 20px' }}>
       <h1 style={{ color: '#38bdf8', marginBottom: '10px' }}>Ofis & Duino-Coin Canlı Takip</h1>
       <p style={{ color: '#94a3b8', marginBottom: '40px' }}>Son Güncelleme: {data.lastUpdate}</p>
 
-      <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap', maxWidth: '1000px', margin: '0 auto' }}>
         <div style={{ background: '#1e293b', padding: '20px 30px', borderRadius: '12px', minWidth: '200px', boxShadow: '0 4px 6px rgba(0,0,0,0.3)' }}>
           <h3 style={{ margin: '0 0 10px 0', color: '#cbd5e1' }}>Sıcaklık</h3>
           <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#fb923c' }}>{data.temperature} &deg;C</div>
@@ -46,12 +50,17 @@ export default function Home() {
 
         <div style={{ background: '#1e293b', padding: '20px 30px', borderRadius: '12px', minWidth: '200px', boxShadow: '0 4px 6px rgba(0,0,0,0.3)' }}>
           <h3 style={{ margin: '0 0 10px 0', color: '#cbd5e1' }}>Hashrate</h3>
-          <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#4ade80' }}>{(typeof data.hashrate === 'number' ? data.hashrate : 0).toFixed(2)} kH/s</div>
+          <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#4ade80' }}>{hashrateVal.toFixed(2)} kH/s</div>
         </div>
 
         <div style={{ background: '#1e293b', padding: '20px 30px', borderRadius: '12px', minWidth: '200px', boxShadow: '0 4px 6px rgba(0,0,0,0.3)' }}>
           <h3 style={{ margin: '0 0 10px 0', color: '#cbd5e1' }}>Kabul / Red</h3>
           <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#c084fc' }}>{data.accepted} / {data.rejected}</div>
+        </div>
+
+        <div style={{ background: '#1e293b', padding: '20px 30px', borderRadius: '12px', minWidth: '200px', boxShadow: '0 4px 6px rgba(0,0,0,0.3)' }}>
+          <h3 style={{ margin: '0 0 10px 0', color: '#cbd5e1' }}>DUCO Bakiye</h3>
+          <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#facc15' }}>{balanceVal.toFixed(4)} DUCO</div>
         </div>
       </div>
       
