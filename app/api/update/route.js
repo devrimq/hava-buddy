@@ -10,7 +10,7 @@ let latestData = {
   rejected: 0,
   balance: 0,
   lastUpdate: "Veri yok",
-  lastSeenTimestamp: null // Son paket geliş zamanı
+  lastSeenTimestamp: null
 };
 
 export async function POST(request) {
@@ -21,26 +21,42 @@ export async function POST(request) {
     latestData = {
       ...latestData,
       ...body,
-      lastSeenTimestamp: now.getTime(), // Milisaniye cinsinden kaydediyoruz
+      lastSeenTimestamp: now.getTime(),
       lastUpdate: now.toLocaleTimeString('tr-TR', { timeZone: 'Europe/Istanbul' })
     };
 
-  if (body.username) {
-      try {
-        const resBalance = await fetch(`https://server.duinocoin.com/balances/${body.username}`, {
-          cache: 'no-store',
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-          }
-        });
+    // ESP32 username göndermezse varsayılan devrimq kullanılsın
+    const username = body.username || "devrimq";
+
+    try {
+      const resBalance = await fetch(`https://server.duinocoin.com/balances/${username}`, {
+        cache: 'no-store',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'application/json'
+        }
+      });
+
+      if (resBalance.ok) {
         const jsonBalance = await resBalance.json();
         
-        if (jsonBalance && jsonBalance.success && jsonBalance.result && jsonBalance.result.balance !== undefined) {
-          latestData.balance = jsonBalance.result.balance;
+        // Duino-Coin API farklı yanıt formatları dönebiliyor, ikisini de kontrol ediyoruz
+        let currentBalance = null;
+        
+        if (jsonBalance?.result?.balance !== undefined) {
+          currentBalance = jsonBalance.result.balance;
+        } else if (Array.isArray(jsonBalance?.result) && jsonBalance.result[0]?.balance !== undefined) {
+          currentBalance = jsonBalance.result[0].balance;
+        } else if (typeof jsonBalance?.result === 'number') {
+          currentBalance = jsonBalance.result;
         }
-      } catch (err) {
-        console.error("Duino-Coin Bakiye Çekme Hatası:", err);
+
+        if (currentBalance !== null) {
+          latestData.balance = currentBalance;
+        }
       }
+    } catch (err) {
+      console.error("Duino-Coin Bakiye Çekme Hatası:", err);
     }
 
     return NextResponse.json({ success: true, message: "Veri kaydedildi!" });
