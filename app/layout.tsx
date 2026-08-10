@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     siteName: "Hava Buddy",
     images: [
       {
-        url: "/icon.png", // public klasöründeki icon.png dosyasını kullanır
+        url: "/favicon.png", // public klasöründeki icon.png dosyasını kullanır
         width: 512,
         height: 512,
         alt: "Hava Buddy Logo",
