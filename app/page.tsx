@@ -16,7 +16,8 @@ export default function Home() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const res = await fetch('/api/update');
+        // Tarayıcı önbelleğini (cache) kapatan komut eklendi!
+        const res = await fetch('/api/update', { cache: 'no-store' });
         const json = await res.json();
         setData(json);
       } catch (err) {
