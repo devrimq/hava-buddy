@@ -10,18 +10,31 @@ export default function Home() {
     accepted: 0,
     rejected: 0,
     balance: 0,
-    lastUpdate: "-"
+    lastUpdate: "-",
+    timestamp: null
   });
+
+  const [isOnline, setIsOnline] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
       try {
-        // Tarayıcı önbelleğini (cache) kapatan komut eklendi!
         const res = await fetch('/api/update', { cache: 'no-store' });
         const json = await res.json();
-        setData(json);
+        
+        // Gelen veride timestamp yoksa veya uyuşmuyorsa şu anki zamanı baz alalım
+        const updateTime = json.timestamp ? new Date(json.timestamp) : new Date();
+        
+        setData({
+          ...json,
+          timestamp: updateTime
+        });
+
+        // Veri başarıyla çekildiyse online yap
+        setIsOnline(true);
       } catch (err) {
         console.error("Veri çekilemedi:", err);
+        setIsOnline(false);
       }
     }
 
@@ -30,15 +43,65 @@ export default function Home() {
     return () => clearInterval(interval);
   }, []);
 
+  // Zaman aşımı (Timeout) kontrolü: Son veri geleli 30 saniyeden fazla olduysa offline yap
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (data.timestamp) {
+        const diffInSeconds = (new Date() - new Date(data.timestamp)) / 1000;
+        if (diffInSeconds > 30) { 
+          setIsOnline(false);
+        }
+      }
+    }, 5000);
+
+    return () => clearInterval(timer);
+  }, [data.timestamp]);
+
   const hashrateVal = Number(data.hashrate) || 0;
   const balanceVal = Number(data.balance) || 0;
 
   return (
     <main style={{ fontFamily: 'Arial, sans-serif', background: '#0f172a', color: '#f8fafc', minHeight: '100vh', textAlign: 'center', padding: '50px 20px' }}>
-      <h1 style={{ color: '#38bdf8', marginBottom: '10px' }}>Ofis & Duino-Coin Canlı Takip</h1>
+      
+      {/* Üst Başlık ve Durum Rozeti */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginBottom: '10px' }}>
+        <h1 style={{ color: '#38bdf8', margin: 0 }}>Ofis & Duino-Coin Canlı Takip</h1>
+        
+        <span style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '6px',
+          padding: '4px 12px',
+          borderRadius: '20px',
+          fontSize: '14px',
+          fontWeight: 'bold',
+          background: isOnline ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+          color: isOnline ? '#4ade80' : '#f87171',
+          border: `1px solid ${isOnline ? '#22c55e' : '#ef4444'}`
+        }}>
+          <span style={{
+            width: '8px',
+            height: '8px',
+            borderRadius: '50%',
+            backgroundColor: isOnline ? '#22c55e' : '#ef4444'
+          }} />
+          {isOnline ? 'Çevrimiçi' : 'Çevrimdışı'}
+        </span>
+      </div>
+
       <p style={{ color: '#94a3b8', marginBottom: '40px' }}>Son Güncelleme: {data.lastUpdate}</p>
 
-      <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap', maxWidth: '1000px', margin: '0 auto' }}>
+      {/* Veri Kartları - Offline olduğunda hafif soluklaşır */}
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        gap: '20px', 
+        flexWrap: 'wrap', 
+        maxWidth: '1000px', 
+        margin: '0 auto',
+        opacity: isOnline ? 1 : 0.5,
+        transition: 'opacity 0.3s ease'
+      }}>
         <div style={{ background: '#1e293b', padding: '20px 30px', borderRadius: '12px', minWidth: '200px', boxShadow: '0 4px 6px rgba(0,0,0,0.3)' }}>
           <h3 style={{ margin: '0 0 10px 0', color: '#cbd5e1' }}>Sıcaklık</h3>
           <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#fb923c' }}>{data.temperature} &deg;C</div>
