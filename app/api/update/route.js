@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'; // Next.js'in veriyi dondurmasını (cache) kesin olarak engeller!
 import { NextResponse } from 'next/server';
 
 let latestData = {
@@ -15,23 +16,21 @@ export async function POST(request) {
   try {
     const body = await request.json();
     
-    // Önce gelen gövde verilerini güncelle
     latestData = {
       ...latestData,
       ...body,
       lastUpdate: new Date().toLocaleTimeString('tr-TR', { timeZone: 'Europe/Istanbul' })
     };
 
-    // ESP32'den kullanıcı adı geldiğinde Duino-Coin API'sinden güncel bakiyeyi çek
     if (body.username) {
       try {
-        const resBalance = await fetch(`https://server.duinocoin.com/users/${body.username}`, {
-          cache: 'no-store' // Önceden önbelleğe alınan eski bakiyeyi engeller
+        const resBalance = await fetch(`https://server.duinocoin.com/balances/${body.username}`, {
+          cache: 'no-store' 
         });
         const jsonBalance = await resBalance.json();
         
-        if (jsonBalance && jsonBalance.success && jsonBalance.result && jsonBalance.result.balance) {
-          latestData.balance = jsonBalance.result.balance.balance;
+        if (jsonBalance && jsonBalance.success && jsonBalance.result && jsonBalance.result.balance !== undefined) {
+          latestData.balance = jsonBalance.result.balance;
         }
       } catch (err) {
         console.error("Duino-Coin Bakiye Çekme Hatası:", err);
