@@ -25,10 +25,13 @@ export async function POST(request) {
       lastUpdate: now.toLocaleTimeString('tr-TR', { timeZone: 'Europe/Istanbul' })
     };
 
-    if (body.username) {
+  if (body.username) {
       try {
         const resBalance = await fetch(`https://server.duinocoin.com/balances/${body.username}`, {
-          cache: 'no-store' 
+          cache: 'no-store',
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          }
         });
         const jsonBalance = await resBalance.json();
         
